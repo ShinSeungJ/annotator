@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  base: '/annotator/',
   server: {
     port: 5174,
     host: true, // allows access from LAN
