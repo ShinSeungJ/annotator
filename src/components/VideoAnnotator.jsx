@@ -143,6 +143,9 @@ const VideoAnnotator = ({ darkMode, setDarkMode }) => {
   const redoStack = singleAnimalRedoStack;
   const setRedoStack = setSingleAnimalRedoStack;
 
+  // Add state for frame names when video is processed
+  const [frameNames, setFrameNames] = useState([]);
+
   // Sync totalFrames with the number of loaded image URLs
   useEffect(() => {
     setTotalFrames(imageUrls.length);
@@ -164,6 +167,69 @@ const VideoAnnotator = ({ darkMode, setDarkMode }) => {
     setCurrentSkeletonId(0);
     setCurrentBboxId(0);
   }, [multiAnimalMode]);
+
+  // Update current IDs when frame changes in multi-animal mode
+  useEffect(() => {
+    if (multiAnimalMode) {
+      updateCurrentIdsForFrame();
+    }
+  }, [currentFrame, multiAnimalMode, annotations]);
+
+  // Function to calculate next available ID for current frame
+  const updateCurrentIdsForFrame = () => {
+    if (!multiAnimalMode) return;
+    
+    const currentAnn = annotations[currentFrame];
+    if (!currentAnn) {
+      setCurrentSkeletonId(0);
+      setCurrentBboxId(0);
+      return;
+    }
+    
+    let maxSkeletonId = -1;
+    let maxBboxId = -1;
+    
+    // Check completed skeletons
+    if (currentAnn.skeletons) {
+      currentAnn.skeletons.forEach(skeleton => {
+        if (skeleton.keypoints && skeleton.keypoints.some(pt => pt !== null)) {
+          if (skeleton.id !== undefined) {
+            maxSkeletonId = Math.max(maxSkeletonId, skeleton.id);
+          }
+        }
+      });
+    }
+    
+    // Check working skeleton
+    if (currentAnn.keypoints && currentAnn.keypoints.some(pt => pt !== null)) {
+      const id = currentAnn.skeletonId !== undefined ? currentAnn.skeletonId : 0;
+      maxSkeletonId = Math.max(maxSkeletonId, id);
+    }
+    
+    // Check completed bboxes
+    if (currentAnn.bboxes) {
+      currentAnn.bboxes.forEach(bbox => {
+        if (bbox.bbox && bbox.bbox.length === 4) {
+          if (bbox.id !== undefined) {
+            maxBboxId = Math.max(maxBboxId, bbox.id);
+          }
+        }
+      });
+    }
+    
+    // Check working bbox
+    if (currentAnn.bbox && currentAnn.bbox.length === 4) {
+      const id = currentAnn.bboxId !== undefined ? currentAnn.bboxId : 0;
+      maxBboxId = Math.max(maxBboxId, id);
+    }
+    
+    // Set next available IDs (start from 0 if no annotations found)
+    const nextSkeletonId = maxSkeletonId >= 0 ? maxSkeletonId + 1 : 0;
+    const nextBboxId = maxBboxId >= 0 ? maxBboxId + 1 : 0;
+    
+    setCurrentSkeletonId(nextSkeletonId);
+    setCurrentBboxId(nextBboxId);
+  };
 
   const isVideoMode = !!videoUrl;
   const isImageMode = imageUrls.length > 0;
@@ -377,6 +443,7 @@ const VideoAnnotator = ({ darkMode, setDarkMode }) => {
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
       const urls = [];
+      const names = []; // Generate frame names
       for (let idx = 0; idx < frameIndices.length; idx++) {
         const frame = frameIndices[idx];
         video.currentTime = frame / fps;
@@ -386,10 +453,16 @@ const VideoAnnotator = ({ darkMode, setDarkMode }) => {
         });
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         urls.push(canvas.toDataURL('image/jpeg'));
+        
+        // Generate frame name using 6-digit padding (same as export logic)
+        const frameName = frame.toString().padStart(6, '0') + '.jpg';
+        names.push(frameName);
+        
         setExtractProgress(Math.round(((idx + 1) / frameIndices.length) * 100));
       }
       setImageFiles([]);
       setImageUrls(urls);
+      setFrameNames(names); // Store frame names
       setVideoFile(null);
       setVideoUrl(null);
       setAnnotations([]);
@@ -400,6 +473,9 @@ const VideoAnnotator = ({ darkMode, setDarkMode }) => {
       setExtracting(false);
       setExtractProgress(0);
       setModalView('stride');
+      
+      // Set initial frame name for video mode
+      setCurrentImageName(names[0] || '');
     } catch (err) {
       setExtractError('Failed to extract frames: ' + err.message);
       setExtracting(false);
@@ -418,23 +494,39 @@ const VideoAnnotator = ({ darkMode, setDarkMode }) => {
     setMode(null);
     setKeypointIndex(0);
     setCurrentImageName(files[0]?.name || '');
+    setFrameNames([]); // Clear frame names for image mode
   };
 
   const handlePrevFrame = () => {
     const newFrame = Math.max(0, currentFrame - 1);
     setCurrentFrame(newFrame);
-    setCurrentImageName(imageFiles[newFrame]?.name || '');
+    // Use frame names for video mode, or file names for image mode
+    if (frameNames.length > 0) {
+      setCurrentImageName(frameNames[newFrame] || '');
+    } else {
+      setCurrentImageName(imageFiles[newFrame]?.name || '');
+    }
   };
 
   const handleNextFrame = () => {
     const newFrame = Math.min((totalFrames || 1) - 1, currentFrame + 1);
     setCurrentFrame(newFrame);
-    setCurrentImageName(imageFiles[newFrame]?.name || '');
+    // Use frame names for video mode, or file names for image mode
+    if (frameNames.length > 0) {
+      setCurrentImageName(frameNames[newFrame] || '');
+    } else {
+      setCurrentImageName(imageFiles[newFrame]?.name || '');
+    }
   };
 
   const handleFrameChange = (frame) => {
     setCurrentFrame(frame);
-    setCurrentImageName(imageFiles[frame]?.name || '');
+    // Use frame names for video mode, or file names for image mode
+    if (frameNames.length > 0) {
+      setCurrentImageName(frameNames[frame] || '');
+    } else {
+      setCurrentImageName(imageFiles[frame]?.name || '');
+    }
   };
 
   // Undo/redo handlers - ROUTE TO CORRECT IMPLEMENTATION
@@ -1002,6 +1094,7 @@ const VideoAnnotator = ({ darkMode, setDarkMode }) => {
       setVideoFile(null);
       setVideoUrl(null);
       setCurrentImageName(finalImageFiles[0]?.name || '');
+      setFrameNames([]); // Clear frame names for loaded image mode
       
       // Update current IDs to be the next available after imported annotations
       if (detectedMode) {
