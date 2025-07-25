@@ -1,0 +1,55 @@
+/* Light Theme (Default) */
+:root {
+  --bg-primary: #f7f7f7;
+  --bg-secondary: #fff;
+  --bg-tertiary: #f8f9fa;
+  --bg-quaternary: #f5f5f5;
+  --bg-accent: #e9ecef;
+  --text-primary: #111;
+  --text-secondary: #666;
+  --text-tertiary: #888;
+  --border-primary: #e0e0e0;
+  --border-secondary: #ccc;
+  --border-tertiary: #f0f0f0;
+  --shadow-primary: rgba(0,0,0,0.08);
+  --shadow-secondary: rgba(0,0,0,0.06);
+  --shadow-tertiary: rgba(0,0,0,0.1);
+  --shadow-quaternary: rgba(0,0,0,0.04);
+}
+
+/* Dark Theme */
+.dark-theme {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3a3a3a;
+  --bg-quaternary: #404040;
+  --bg-accent: #4a4a4a;
+  --text-primary: #e0e0e0;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #888;
+  --border-primary: #555;
+  --border-secondary: #666;
+  --border-tertiary: #444;
+  --shadow-primary: rgba(0,0,0,0.3);
+  --shadow-secondary: rgba(0,0,0,0.25);
+  --shadow-tertiary: rgba(0,0,0,0.4);
+  --shadow-quaternary: rgba(0,0,0,0.2);
+}
+
+.app-container {
+  background: var(--bg-primary);
+  min-height: 100vh;
+  transition: background-color 0.3s ease;
+}
+
+.App {
+  font-family: Arial, sans-serif;
+  padding: 2rem;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
+}
+
+body, h1, h2, h3, h4, h5, h6, label, span, p, button, input {
+  color: var(--text-primary);
+  transition: color 0.3s ease;
+} 
