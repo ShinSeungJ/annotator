@@ -430,9 +430,20 @@ const VideoAnnotator = ({ darkMode, setDarkMode }) => {
         // Generate random frame indices using stratified sampling
         frameIndices = generateRandomFrameIndices(total, randomFrameCount);
       } else {
-        // Use stride-based sampling (original logic)
+        // Use stride-based sampling
         const strideVal = Math.max(1, stride);
-        for (let i = 0; i < total; i += strideVal) frameIndices.push(i);
+        
+        if (inputMode === 'frames') {
+          // When user specified target frames, limit to exact count
+          for (let i = 0; i < total && frameIndices.length < targetFrames; i += strideVal) {
+            frameIndices.push(i);
+          }
+        } else {
+          // When user specified stride, use original logic
+          for (let i = 0; i < total; i += strideVal) {
+            frameIndices.push(i);
+          }
+        }
       }
       
       // Store original frame indices for export
