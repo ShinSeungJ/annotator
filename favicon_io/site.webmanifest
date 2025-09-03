@@ -1,6 +1,6 @@
 {
-  "name": "Video Annotator",
-  "short_name": "Annotator",
+  "name": "Keypoint Annotator",
+  "short_name": "Keypoint Annotator",
   "icons": [
     {
       "src": "/favicon_io/android-chrome-192x192.png",
